@@ -2,15 +2,32 @@
 
 # Several datasets required apart from the prescription data itslef
 # Practice data
-# Post code data (for practice geo-location)
+# Post code data (for the practices geo-location)
 
-library(dplyr)
+library(tidyverse)
 
 # --------------------------------------------------
 # Get practise data
 # --------------------------------------------------
 
 docs_in <- read.csv("data/gp-practice-reference-file--january-2020.csv")
+col_names <- colnames(docs_in)
+
+docs_in19 <- read.csv("data/gp-practice-reference-file---january-2019.csv")
+colnames(docs_in19) <- col_names
+
+docs_in18 <- read.csv("data/gp-practice-reference-file---january-2018.csv")
+colnames(docs_in18) <- col_names
+
+docs_in <- rbind(docs_in, docs_in19, docs_in18)
+
+docs_in$PracticeName[docs_in$PracticeName == "NULL"] <- NA
+
+colSums(is.na(docs_in))
+docs_in <- docs_in[complete.cases(docs_in), ]
+
+docs_in <- subset(docs_in, !duplicated(docs_in$PracNo))
+str(docs_in)
 
 head(docs_in)
 
@@ -26,9 +43,6 @@ str(docs_in)
 # Practise Name not required - remove
 
 docs_in <- docs_in[, -2]
-
-# library for improved data manuipulation
-library(dplyr)
 
 # Want to join this with postcode data to have town identifier
 
@@ -68,11 +82,11 @@ str(postcodes_clean)
 # they are required later, then will retrieve that from an API reference source
 # Create fake data fame of missing data to be appended to the postcode info.
 temp_lookup <- data.frame(
-  c("BT41NS" , "BT308RD", "BT252AT", "BT294LN", "BT414BS", 
+  c("BT41NS" , "BT308RD", "BT294LN", "BT414BS", 
     "BT388TP","BT399HL", "BT670LQ", "BT670DD", "BT670QA"),
-  c("BELFAST", "DOWNPATRICK", "DROMARA", "CRUMLIN", "ANTRIM",
+  c("BELFAST", "DOWNPATRICK", "CRUMLIN", "ANTRIM",
     "GREENISLAND", "BALLYCLARE", "MOIRA", "AGHALEE", "MOIRA"),
-  c("DOWN", "DOWN", "DOWN", "ANTRIM", "ANTRIM",
+  c("DOWN", "DOWN", "ANTRIM", "ANTRIM",
     "ANTRIM", "ANTRIM", "DOWN", "ANTRIM", "DOWN"),
   NA, NA)
 
@@ -110,6 +124,7 @@ colSums(is.na(docs_in))
 
 # --------------------------------------------------
 # Save clean practice dataset to file
+docs_in <- subset(docs_in, !duplicated(docs_in$PracNo))
 
 write.csv(file="data/cleaned_practice_data.csv", x=docs_in, quote=TRUE, row.names = FALSE)
 
