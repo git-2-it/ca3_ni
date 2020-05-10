@@ -10,16 +10,21 @@ library(tidyverse)
 # Get practise data
 # --------------------------------------------------
 
-docs_in <- read.csv("data/gp-practice-reference-file--january-2020.csv")
-col_names <- colnames(docs_in)
-
-docs_in19 <- read.csv("data/gp-practice-reference-file---january-2019.csv")
-colnames(docs_in19) <- col_names
 
 docs_in18 <- read.csv("data/gp-practice-reference-file---january-2018.csv")
+docs_in18$year = "2018"
 colnames(docs_in18) <- col_names
 
-docs_in <- rbind(docs_in, docs_in19, docs_in18)
+docs_in19 <- read.csv("data/gp-practice-reference-file---january-2019.csv")
+docs_in19$year = "2019"
+colnames(docs_in19) <- col_names
+
+docs_in20 <- read.csv("data/gp-practice-reference-file--january-2020.csv")
+docs_in20$year = "2020"
+col_names <- colnames(docs_in)
+
+# bind order important to keep the year
+docs_in <- rbind(docs_in20, docs_in19, docs_in18)
 
 docs_in$PracticeName[docs_in$PracticeName == "NULL"] <- NA
 
@@ -27,6 +32,9 @@ colSums(is.na(docs_in))
 docs_in <- docs_in[complete.cases(docs_in), ]
 
 docs_in <- subset(docs_in, !duplicated(docs_in$PracNo))
+str(docs_in)
+
+docs_in$year <- as.factor(docs_in$year)
 str(docs_in)
 
 head(docs_in)

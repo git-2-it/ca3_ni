@@ -9,11 +9,11 @@
 # --------------------------------------------------
 
 # Init required libraries
-library("dplyr") 
 library("readr")
 library("tidyr")
 
 datapath <- "data/2years"
+
 
 coltypes <- list(
   col_integer(), col_integer(), col_integer(), 
@@ -113,16 +113,17 @@ library("viridis")
 orig_par <- par()
 
 # plot practice  frequency stacked by  chapter
+# Indication of volumes and types of items, not frequency per se
 plot_table0 <- table(twoyears_in$BNF_Chapter )
 
 barplot(plot_table0, 
-             main = "Basic counts", 
-             xlab = "Chapter", 
-             ylab = "Frequency",
-             col = viridis(5),
-             cex.names = 0.75,
-             beside=TRUE,
-             args.legend=list(bty="n",horiz=TRUE),
+        main = "Basic counts", 
+        xlab = "Chapter", 
+        ylab = "Frequency",
+        col = viridis(5),
+        cex.names = 0.75,
+        beside=TRUE,
+        args.legend=list(bty="n",horiz=TRUE),
 )
 # print(plot_table0)
 
@@ -168,23 +169,35 @@ keep_cols <- c("Practice","BNF_Chapter",
                "BNF_Section", "BNF_Paragraph", "BNF_Sub_Paragraph"
 )
 
+# create joined chapter/section code
+# twoyears_in$BNF_X <- paste(formatC(twoyears_in$BNF_Chapter, width=2, flag="0") , 
+#                            formatC(twoyears_in$BNF_Section, width=2, flag="0"),
+#                            formatC(twoyears_in$BNF_Paragraph, width=2, flag="0"),
+#                            formatC(twoyears_in$BNF_Sub_Paragraph, width=2, flag="0"),
+#                            sep="")
+
 attach(twoyears_in)
-practice_items  <- aggregate(twoyears_in$Total_Items, 
-                             by=list(Practice,BNF_Chapter,
-                                     BNF_Section, BNF_Paragraph, BNF_Sub_Paragraph),
-                             FUN=sum)
+practice_items_sum  <- aggregate(twoyears_in$Total_Items, 
+                                 by=list(Practice,BNF_Chapter,
+                                         BNF_Section, BNF_Paragraph, BNF_Sub_Paragraph),
+                                 FUN=sum)
+practice_items_mean  <- aggregate(twoyears_in$Total_Items, 
+                                  by=list(Practice,BNF_Chapter,
+                                          BNF_Section, BNF_Paragraph, BNF_Sub_Paragraph),
+                                  FUN=mean)
 detach(twoyears_in)
 
-# Reuse colum names for teh summarised dataset, making sure to label the calculated total
-keep_cols <- append(keep_cols, "ItemsTotal")
+# Reuse colum names for the summarised dataset, making sure to label the calculated values
+colnames(practice_items_sum) <- append(keep_cols, "ItemsTotal")
+colnames(practice_items_mean) <- append(keep_cols, "MonthlyAvg")
 
-colnames(practice_items) <- keep_cols
+practice_items <- left_join(practice_items_sum, practice_items_mean )
 
 str(practice_items)
 
 str(twoyears_in)
 
-write.csv(file="data/prescription_sub2.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
+write.csv(file="data/prescription_sub.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
 write.csv(file="data/prescription_summary.csv", x=practice_items, quote=TRUE, row.names = FALSE)
 
 
