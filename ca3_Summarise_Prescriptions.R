@@ -166,7 +166,7 @@ colSums(is.na(twoyears_in))
 #twoyears_in <- subset(twoyears_in, select = -c(Total_Quantity) )
 
 keep_cols <- c("Practice","BNF_Chapter",
-               "BNF_Section", "BNF_Paragraph", "BNF_Sub_Paragraph"
+               "BNF_Section" #, "BNF_Paragraph", "BNF_Sub_Paragraph"
 )
 
 # create joined chapter/section code
@@ -179,26 +179,44 @@ keep_cols <- c("Practice","BNF_Chapter",
 attach(twoyears_in)
 practice_items_sum  <- aggregate(twoyears_in$Total_Items, 
                                  by=list(Practice,BNF_Chapter,
-                                         BNF_Section, BNF_Paragraph, BNF_Sub_Paragraph),
+                                         BNF_Section), 
+                                         # BNF_Paragraph, BNF_Sub_Paragraph),
                                  FUN=sum)
+practice_items_month_sum  <- aggregate(twoyears_in$Total_Items, 
+                                       by=list(Practice,
+                                               Year, 
+                                               Month
+                                       ), 
+                                       FUN=sum)
 practice_items_mean  <- aggregate(twoyears_in$Total_Items, 
-                                  by=list(Practice,BNF_Chapter,
-                                          BNF_Section, BNF_Paragraph, BNF_Sub_Paragraph),
+                                  by=list(Practice,
+                                          BNF_Chapter,
+                                          BNF_Section),
                                   FUN=mean)
 detach(twoyears_in)
 
 # Reuse colum names for the summarised dataset, making sure to label the calculated values
 colnames(practice_items_sum) <- append(keep_cols, "ItemsTotal")
-colnames(practice_items_mean) <- append(keep_cols, "MonthlyAvg")
+colnames(practice_items_mean) <- append(keep_cols, "MonthlyAvg_ChSn")
+colnames(practice_items_month_sum) <- c("Practice","Year", "Month", "Total_Items")
+
+practice_items_mean2 <- aggregate(practice_items_month_sum$Total_Items , 
+                                  by = list(practice_items_month_sum$Practice ), 
+                                  mean)
+colnames(practice_items_mean2) <- c("Practice","MonthlyAvg")
+
 
 practice_items <- left_join(practice_items_sum, practice_items_mean )
+practice_items <- left_join(practice_items, practice_items_mean2)
 
 str(practice_items)
 
+
+
 str(twoyears_in)
 
-write.csv(file="data/prescription_sub.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
 write.csv(file="data/prescription_summary.csv", x=practice_items, quote=TRUE, row.names = FALSE)
+write.csv(file="data/prescription_sub.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
 
 
 

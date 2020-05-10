@@ -10,18 +10,18 @@ library(tidyverse)
 # Get practise data
 # --------------------------------------------------
 
-
-docs_in18 <- read.csv("data/gp-practice-reference-file---january-2018.csv")
-docs_in18$year = "2018"
-colnames(docs_in18) <- col_names
+docs_in20 <- read.csv("data/gp-practice-reference-file--january-2020.csv")
+docs_in20$year = "2020"
+col_names <- colnames(docs_in20)
 
 docs_in19 <- read.csv("data/gp-practice-reference-file---january-2019.csv")
 docs_in19$year = "2019"
 colnames(docs_in19) <- col_names
 
-docs_in20 <- read.csv("data/gp-practice-reference-file--january-2020.csv")
-docs_in20$year = "2020"
-col_names <- colnames(docs_in)
+docs_in18 <- read.csv("data/gp-practice-reference-file---january-2018.csv")
+docs_in18$year = "2018"
+colnames(docs_in18) <- col_names
+
 
 # bind order important to keep the year
 docs_in <- rbind(docs_in20, docs_in19, docs_in18)
@@ -50,7 +50,7 @@ str(docs_in)
 # Registered Patients
 # Practise Name not required - remove
 
-docs_in <- docs_in[, -2]
+#docs_in <- docs_in[, -2]
 
 # Want to join this with postcode data to have town identifier
 
