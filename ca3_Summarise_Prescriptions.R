@@ -11,6 +11,7 @@
 # Init required libraries
 library("readr")
 library("tidyr")
+library("dplyr")
 
 datapath <- "data/2years"
 
@@ -30,7 +31,7 @@ twoyears_in <- list.files(path=datapath, full.names=TRUE, recursive = TRUE) %>%
 # Check for notable problems or warnings 
 problems(twoyears_in)
 warnings()
-
+warnings()
 # Check Structure
 str(twoyears_in)
 
@@ -176,47 +177,161 @@ keep_cols <- c("Practice","BNF_Chapter",
 #                            formatC(twoyears_in$BNF_Sub_Paragraph, width=2, flag="0"),
 #                            sep="")
 
-attach(twoyears_in)
-practice_items_sum  <- aggregate(twoyears_in$Total_Items, 
-                                 by=list(Practice,BNF_Chapter,
-                                         BNF_Section), 
-                                         # BNF_Paragraph, BNF_Sub_Paragraph),
-                                 FUN=sum)
-practice_items_month_sum  <- aggregate(twoyears_in$Total_Items, 
-                                       by=list(Practice,
-                                               Year, 
-                                               Month
-                                       ), 
-                                       FUN=sum)
-practice_items_mean  <- aggregate(twoyears_in$Total_Items, 
-                                  by=list(Practice,
-                                          BNF_Chapter,
-                                          BNF_Section),
-                                  FUN=mean)
-detach(twoyears_in)
+# 
+# attach(twoyears_in)
 
-# Reuse colum names for the summarised dataset, making sure to label the calculated values
-colnames(practice_items_sum) <- append(keep_cols, "ItemsTotal")
-colnames(practice_items_mean) <- append(keep_cols, "MonthlyAvg_ChSn")
-colnames(practice_items_month_sum) <- c("Practice","Year", "Month", "Total_Items")
+# --------------------------- 
+# --------------------------- 
+# Create sums and means, per category, WAC
+# --------------------------- 
 
-practice_items_mean2 <- aggregate(practice_items_month_sum$Total_Items , 
-                                  by = list(practice_items_month_sum$Practice ), 
-                                  mean)
-colnames(practice_items_mean2) <- c("Practice","MonthlyAvg")
+keep_cols1 <- c("Month", "Practice","BNF_Chapter",
+                "BNF_Section")
+keep_cols2 <- c("Practice","BNF_Chapter",
+                "BNF_Section"
+)
 
+##
 
-practice_items <- left_join(practice_items_sum, practice_items_mean )
-practice_items <- left_join(practice_items, practice_items_mean2)
+practice_items_sum_CSPS  <- aggregate(twoyears_in$Total_Items, 
+                                      by=list(twoyears_in$Month,
+                                              twoyears_in$Practice,
+                                              twoyears_in$BNF_Chapter,
+                                              twoyears_in$BNF_Section,
+                                              twoyears_in$BNF_Paragraph,
+                                              twoyears_in$BNF_Sub_Paragraph), 
+                                      FUN=sum)
+colnames(practice_items_sum_CSPS) <- append(keep_cols1, 
+                                            c("BNF_Paragraph", "BNF_Sub_Paragraph","MonthlySum_CSPS"))
 
-str(practice_items)
+practice_items_mean_CSPS  <- aggregate(practice_items_sum_CSPS$MonthlySum_CSPS,
+                                       by=list(
+                                         practice_items_sum_CSPS$Practice,
+                                         practice_items_sum_CSPS$BNF_Chapter,
+                                         practice_items_sum_CSPS$BNF_Section,
+                                         practice_items_sum_CSPS$BNF_Paragraph,
+                                         practice_items_sum_CSPS$BNF_Sub_Paragraph),
+                                       FUN=mean)
+colnames(practice_items_mean_CSPS) <- append(keep_cols2, 
+                                             c("BNF_Paragraph", "BNF_Sub_Paragraph","MonthlyAvg_CSPS"))
 
+##
 
+practice_items_sum_CSP  <- aggregate(practice_items_sum_CSPS$MonthlySum_CSPS,
+                                     by=list(practice_items_sum_CSPS$Month,
+                                             practice_items_sum_CSPS$Practice,
+                                             practice_items_sum_CSPS$BNF_Chapter,
+                                             practice_items_sum_CSPS$BNF_Section,
+                                             practice_items_sum_CSPS$BNF_Paragraph
+                                     ),
+                                     FUN=sum)
+colnames(practice_items_sum_CSP) <- append(keep_cols1, 
+                                           c("BNF_Paragraph","MonthlySum_CSP"))
+
+practice_items_mean_CSP  <- aggregate(practice_items_sum_CSP$MonthlySum_CSP,
+                                      by=list(
+                                        practice_items_sum_CSP$Practice,
+                                        practice_items_sum_CSP$BNF_Chapter,
+                                        practice_items_sum_CSP$BNF_Section,
+                                        practice_items_sum_CSP$BNF_Paragraph
+                                      ),
+                                      FUN=mean)
+colnames(practice_items_mean_CSP) <- append(keep_cols2, 
+                                            c("BNF_Paragraph", "MonthlyAvg_CSP"))
+
+##
+practice_items_sum_CS  <- aggregate(practice_items_sum_CSP$MonthlySum_CSP,
+                                    by=list(practice_items_sum_CSP$Month,
+                                            practice_items_sum_CSP$Practice,
+                                            practice_items_sum_CSP$BNF_Chapter,
+                                            practice_items_sum_CSP$BNF_Section
+                                    ),
+                                    FUN=sum)
+colnames(practice_items_sum_CS) <- append(keep_cols1, c("MonthlySum_CS"))
+
+practice_items_mean_CS  <- aggregate(practice_items_sum_CS$MonthlySum_CS,
+                                     by=list(
+                                       practice_items_sum_CS$Practice,
+                                       practice_items_sum_CS$BNF_Chapter,
+                                       practice_items_sum_CS$BNF_Section
+                                     ),
+                                     FUN=mean)
+colnames(practice_items_mean_CS) <- append(keep_cols2, c("MonthlyAvg_CS"))
+##
+practice_items_sum_C  <- aggregate(practice_items_sum_CS$MonthlySum_CS,
+                                   by=list(practice_items_sum_CS$Month,
+                                           practice_items_sum_CS$Practice,
+                                           practice_items_sum_CS$BNF_Chapter
+                                   ),
+                                   FUN=sum)
+colnames(practice_items_sum_C) <- c("Month", "Practice","BNF_Chapter", "MonthlySum_C")
+
+practice_items_mean_C  <- aggregate(practice_items_sum_C$MonthlySum_C,
+                                    by=list(practice_items_sum_C$Practice,
+                                            practice_items_sum_C$BNF_Chapter
+                                    ),
+                                    FUN=mean)
+colnames(practice_items_mean_C) <- c("Practice","BNF_Chapter", "MonthlyAvg_C")
+
+## 
+
+practice_items_sum_P  <- aggregate(practice_items_sum_C$MonthlySum_C, 
+                                   by=list(practice_items_sum_C$Month,
+                                           practice_items_sum_C$Practice), 
+                                   FUN=sum)
+colnames(practice_items_sum_P) <- c("Month", "Practice", "MonthlySum_P")
+
+practice_items_mean_P  <- aggregate(practice_items_sum_P$MonthlySum_P,
+                                    by=list(practice_items_sum_P$Practice
+                                    ),
+                                    FUN=mean)
+colnames(practice_items_mean_P) <- c("Practice", "MonthlyAvg_P")
+
+practice_items_sum_GT  <- aggregate(practice_items_sum_P$MonthlySum_P, 
+                                    by=list(
+                                      practice_items_sum_P$Practice), 
+                                    FUN=sum)
+colnames(practice_items_sum_GT) <- c("Practice", "Sum_GT")
+
+###########################################################
+
+# write.csv(file="data/2year.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
+
+means_table <- practice_items_mean_CSPS
+str(means_table)
+
+means_table <- left_join(means_table, practice_items_mean_CSP,
+                         by = c("Practice" = "Practice", 
+                                "BNF_Chapter" = "BNF_Chapter",
+                                "BNF_Section" = "BNF_Section",
+                                "BNF_Paragraph"= "BNF_Paragraph"
+                         ))
+
+means_table <- left_join(means_table, practice_items_mean_CS,
+                         by = c("Practice" = "Practice", 
+                                "BNF_Chapter" = "BNF_Chapter",
+                                "BNF_Section" = "BNF_Section"
+                         ))
+
+means_table <- left_join(means_table, practice_items_mean_C,
+                         by = c("Practice" = "Practice", 
+                                "BNF_Chapter" = "BNF_Chapter"
+                         ))
+
+means_table <- left_join(means_table, practice_items_mean_P,
+                         by = c("Practice" = "Practice"
+                         ))
+
+means_table <- left_join(means_table, practice_items_sum_GT,
+                         by = c("Practice" = "Practice"
+                         ))
+
+# --------------------------- 
 
 str(twoyears_in)
 
-write.csv(file="data/prescription_summary.csv", x=practice_items, quote=TRUE, row.names = FALSE)
+write.csv(file="data/summary_info.csv", x=means_table, quote=TRUE, row.names = FALSE)
+#write.csv(file="data/prescription_summary.csv", x=practice_items, quote=TRUE, row.names = FALSE)
 write.csv(file="data/prescription_sub.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
-
 
 
