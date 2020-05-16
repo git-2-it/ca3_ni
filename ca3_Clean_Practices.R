@@ -22,6 +22,9 @@ docs_in18 <- read.csv("data/gp-practice-reference-file---january-2018.csv")
 docs_in18$year = "2018"
 colnames(docs_in18) <- col_names
 
+col_names
+
+
 
 # bind order important to keep the year
 docs_in <- rbind(docs_in20, docs_in19, docs_in18)

@@ -14,7 +14,7 @@ library("tidyr")
 library("dplyr")
 
 datapath <- "data/2years"
-
+# datapath <- "data/test"
 
 coltypes <- list(
   col_integer(), col_integer(), col_integer(), 
@@ -46,13 +46,12 @@ years
 
 colSums(is.na(twoyears_in))
 # Numbers of NA are low (in the columns of interest) comparative to dataaset size
+# Will be removed after other checks
 
 # # NA data review, import useful libraries
 # library(mice)
 # library(VIM)
 #
-# junk <- twoyears_in[is.na(twoyears_in$Year),]
-# 
 # md.pattern(twoyears_in, rotate.names = FALSE)
 # 
 # missing_values <- aggr(twoyears_in, prop = c(FALSE), numbers = TRUE,
@@ -118,7 +117,8 @@ orig_par <- par()
 plot_table0 <- table(twoyears_in$BNF_Chapter )
 
 barplot(plot_table0, 
-        main = "Basic counts", 
+        main = "Basic item frequencies by BNF Chapter", 
+        sub = "Includes non-relevant Chapter data",
         xlab = "Chapter", 
         ylab = "Frequency",
         col = viridis(5),
@@ -126,20 +126,6 @@ barplot(plot_table0,
         beside=TRUE,
         args.legend=list(bty="n",horiz=TRUE),
 )
-# print(plot_table0)
-
-# plot_table0 <- table(twoyears_in$BNF_Sub_Paragraph )
-# 
-# barplot(plot_table0, 
-#         main = "Basic counts", 
-#         xlab = "Chapter", 
-#         ylab = "Frequency",
-#         col = viridis(5),
-#         cex.names = 0.75,
-#         beside=TRUE,
-#         args.legend=list(bty="n",horiz=TRUE),
-# )
-
 
 # twoyears_in <- subset(twoyears_in, select = -c(BNF.Code))
 
@@ -163,175 +149,119 @@ twoyears_in$BNF_Section <- replace_na(twoyears_in$BNF_Section, 0)
 twoyears_in$BNF_Sub_Paragraph <- replace_na(twoyears_in$BNF_Sub_Paragraph, 0)
 
 colSums(is.na(twoyears_in))
-# twoyears_in <- subset(twoyears_in, select = -c(Presentation))
-#twoyears_in <- subset(twoyears_in, select = -c(Total_Quantity) )
 
-keep_cols <- c("Practice","BNF_Chapter",
-               "BNF_Section" #, "BNF_Paragraph", "BNF_Sub_Paragraph"
-)
 
-# create joined chapter/section code
-# twoyears_in$BNF_X <- paste(formatC(twoyears_in$BNF_Chapter, width=2, flag="0") , 
-#                            formatC(twoyears_in$BNF_Section, width=2, flag="0"),
-#                            formatC(twoyears_in$BNF_Paragraph, width=2, flag="0"),
-#                            formatC(twoyears_in$BNF_Sub_Paragraph, width=2, flag="0"),
-#                            sep="")
+###########################################
+# Sum and Avg for Practices and Chapters
+# Sum and Avg for Practices
+###########################################
 
-# 
-# attach(twoyears_in)
-
-# --------------------------- 
-# --------------------------- 
-# Create sums and means, per category, WAC
-# --------------------------- 
-
-keep_cols1 <- c("Month", "Practice","BNF_Chapter",
-                "BNF_Section")
-keep_cols2 <- c("Practice","BNF_Chapter",
-                "BNF_Section"
-)
-
-##
-
-practice_items_sum_CSPS  <- aggregate(twoyears_in$Total_Items, 
-                                      by=list(twoyears_in$Month,
-                                              twoyears_in$Practice,
-                                              twoyears_in$BNF_Chapter,
-                                              twoyears_in$BNF_Section,
-                                              twoyears_in$BNF_Paragraph,
-                                              twoyears_in$BNF_Sub_Paragraph), 
-                                      FUN=sum)
-colnames(practice_items_sum_CSPS) <- append(keep_cols1, 
-                                            c("BNF_Paragraph", "BNF_Sub_Paragraph","MonthlySum_CSPS"))
-
-practice_items_mean_CSPS  <- aggregate(practice_items_sum_CSPS$MonthlySum_CSPS,
+# Practices and chapters
+# Get sum for each, by year/month
+practice_items_sum_GT_YMPC  <- aggregate(twoyears_in$Total_Items,
                                        by=list(
-                                         practice_items_sum_CSPS$Practice,
-                                         practice_items_sum_CSPS$BNF_Chapter,
-                                         practice_items_sum_CSPS$BNF_Section,
-                                         practice_items_sum_CSPS$BNF_Paragraph,
-                                         practice_items_sum_CSPS$BNF_Sub_Paragraph),
-                                       FUN=mean)
-colnames(practice_items_mean_CSPS) <- append(keep_cols2, 
-                                             c("BNF_Paragraph", "BNF_Sub_Paragraph","MonthlyAvg_CSPS"))
+                                         twoyears_in$Year,
+                                         twoyears_in$Month,
+                                         twoyears_in$Practice,
+                                         twoyears_in$BNF_Chapter
+                                       ),
+                                       FUN=sum)
+colnames(practice_items_sum_GT_YMPC) <- c("Year", "Month", "Practice","BNF_Chapter", "Total_Items") 
 
-##
+# count entries by practice, chapter - and year and month
+tally_PC <- practice_items_sum_GT_YMPC %>% group_by(Practice, BNF_Chapter) %>% tally(name = "PC_count")
 
-practice_items_sum_CSP  <- aggregate(practice_items_sum_CSPS$MonthlySum_CSPS,
-                                     by=list(practice_items_sum_CSPS$Month,
-                                             practice_items_sum_CSPS$Practice,
-                                             practice_items_sum_CSPS$BNF_Chapter,
-                                             practice_items_sum_CSPS$BNF_Section,
-                                             practice_items_sum_CSPS$BNF_Paragraph
-                                     ),
-                                     FUN=sum)
-colnames(practice_items_sum_CSP) <- append(keep_cols1, 
-                                           c("BNF_Paragraph","MonthlySum_CSP"))
+practice_items_sum_GT_PC  <- aggregate(practice_items_sum_GT_YMPC$Total_Items,
+                                       by=list(
+                                         practice_items_sum_GT_YMPC$Practice,
+                                         practice_items_sum_GT_YMPC$BNF_Chapter
+                                       ),
+                                       FUN=sum)
+colnames(practice_items_sum_GT_PC) <- c("Practice", "BNF_Chapter", "Total_Items_PC") 
 
-practice_items_mean_CSP  <- aggregate(practice_items_sum_CSP$MonthlySum_CSP,
+# Divide items summed by practice and chapter 
+# by number of entries of year and month to get monthly average  
+practice_chapter_month <- left_join(practice_items_sum_GT_PC, tally_PC, 
+                                    by = c("Practice" = "Practice", "BNF_Chapter" = "BNF_Chapter")
+)
+
+# create the average
+practice_chapter_month$PC_Month_Avg <- practice_chapter_month$Total_Items_PC / practice_chapter_month$PC_count
+
+str(practice_chapter_month)
+
+practice_chapter_month <- select(practice_chapter_month, -c(PC_count))
+
+
+##### now practices only
+practice_items_sum_GT_YMP  <- aggregate(practice_items_sum_GT_YMPC$Total_Items,
+                                         by=list(
+                                           practice_items_sum_GT_YMPC$Year,
+                                           practice_items_sum_GT_YMPC$Month,
+                                           practice_items_sum_GT_YMPC$Practice
+                                         ),
+                                         FUN=sum)
+colnames(practice_items_sum_GT_YMP) <- c("Year", "Month", "Practice", "Total_Items") 
+
+practice_items_sum_GT_P  <- aggregate(practice_items_sum_GT_YMPC$Total_Items,
                                       by=list(
-                                        practice_items_sum_CSP$Practice,
-                                        practice_items_sum_CSP$BNF_Chapter,
-                                        practice_items_sum_CSP$BNF_Section,
-                                        practice_items_sum_CSP$BNF_Paragraph
+                                        practice_items_sum_GT_YMPC$Practice
                                       ),
-                                      FUN=mean)
-colnames(practice_items_mean_CSP) <- append(keep_cols2, 
-                                            c("BNF_Paragraph", "MonthlyAvg_CSP"))
+                                      FUN=sum)
+colnames(practice_items_sum_GT_P) <- c("Practice", "Total_Items_P") 
 
-##
-practice_items_sum_CS  <- aggregate(practice_items_sum_CSP$MonthlySum_CSP,
-                                    by=list(practice_items_sum_CSP$Month,
-                                            practice_items_sum_CSP$Practice,
-                                            practice_items_sum_CSP$BNF_Chapter,
-                                            practice_items_sum_CSP$BNF_Section
-                                    ),
-                                    FUN=sum)
-colnames(practice_items_sum_CS) <- append(keep_cols1, c("MonthlySum_CS"))
+tally_P <- practice_items_sum_GT_YMP %>% group_by(Practice) %>% tally(name = "P_count")
 
-practice_items_mean_CS  <- aggregate(practice_items_sum_CS$MonthlySum_CS,
-                                     by=list(
-                                       practice_items_sum_CS$Practice,
-                                       practice_items_sum_CS$BNF_Chapter,
-                                       practice_items_sum_CS$BNF_Section
-                                     ),
-                                     FUN=mean)
-colnames(practice_items_mean_CS) <- append(keep_cols2, c("MonthlyAvg_CS"))
-##
-practice_items_sum_C  <- aggregate(practice_items_sum_CS$MonthlySum_CS,
-                                   by=list(practice_items_sum_CS$Month,
-                                           practice_items_sum_CS$Practice,
-                                           practice_items_sum_CS$BNF_Chapter
-                                   ),
-                                   FUN=sum)
-colnames(practice_items_sum_C) <- c("Month", "Practice","BNF_Chapter", "MonthlySum_C")
+practice_month <- left_join(practice_items_sum_GT_P, tally_P, 
+                                    by = c("Practice" = "Practice")
+)
 
-practice_items_mean_C  <- aggregate(practice_items_sum_C$MonthlySum_C,
-                                    by=list(practice_items_sum_C$Practice,
-                                            practice_items_sum_C$BNF_Chapter
-                                    ),
-                                    FUN=mean)
-colnames(practice_items_mean_C) <- c("Practice","BNF_Chapter", "MonthlyAvg_C")
+practice_month$P_Month_Avg <- practice_month$Total_Items_P / practice_month$P_count
 
-## 
+practice_month <- select(practice_month, -c(P_count))
 
-practice_items_sum_P  <- aggregate(practice_items_sum_C$MonthlySum_C, 
-                                   by=list(practice_items_sum_C$Month,
-                                           practice_items_sum_C$Practice), 
-                                   FUN=sum)
-colnames(practice_items_sum_P) <- c("Month", "Practice", "MonthlySum_P")
+##### end practices only
 
-practice_items_mean_P  <- aggregate(practice_items_sum_P$MonthlySum_P,
-                                    by=list(practice_items_sum_P$Practice
-                                    ),
-                                    FUN=mean)
-colnames(practice_items_mean_P) <- c("Practice", "MonthlyAvg_P")
-
-practice_items_sum_GT  <- aggregate(practice_items_sum_P$MonthlySum_P, 
-                                    by=list(
-                                      practice_items_sum_P$Practice), 
-                                    FUN=sum)
-colnames(practice_items_sum_GT) <- c("Practice", "Sum_GT")
-
-###########################################################
-
-# write.csv(file="data/2year.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
-
-means_table <- practice_items_mean_CSPS
-str(means_table)
-
-means_table <- left_join(means_table, practice_items_mean_CSP,
-                         by = c("Practice" = "Practice", 
-                                "BNF_Chapter" = "BNF_Chapter",
-                                "BNF_Section" = "BNF_Section",
-                                "BNF_Paragraph"= "BNF_Paragraph"
-                         ))
-
-means_table <- left_join(means_table, practice_items_mean_CS,
-                         by = c("Practice" = "Practice", 
-                                "BNF_Chapter" = "BNF_Chapter",
-                                "BNF_Section" = "BNF_Section"
-                         ))
-
-means_table <- left_join(means_table, practice_items_mean_C,
-                         by = c("Practice" = "Practice", 
-                                "BNF_Chapter" = "BNF_Chapter"
-                         ))
-
-means_table <- left_join(means_table, practice_items_mean_P,
+# Join practice info at the different levels
+practice_table <- left_join(practice_month, practice_chapter_month,
                          by = c("Practice" = "Practice"
                          ))
 
-means_table <- left_join(means_table, practice_items_sum_GT,
-                         by = c("Practice" = "Practice"
-                         ))
-
-# --------------------------- 
 
 str(twoyears_in)
 
-write.csv(file="data/summary_info.csv", x=means_table, quote=TRUE, row.names = FALSE)
-#write.csv(file="data/prescription_summary.csv", x=practice_items, quote=TRUE, row.names = FALSE)
+write.csv(file="data/practice_summary_info.csv", x=practice_table, quote=TRUE, row.names = FALSE)
 write.csv(file="data/prescription_sub.csv", x=twoyears_in, quote=TRUE, row.names = FALSE)
+
+head(practice_table, n=10)
+
+practice_table$BNF_Chapter <- as.factor(practice_table$BNF_Chapter)
+
+twoyears_in$BNF_Chapter <- as.factor(twoyears_in$BNF_Chapter)
+plot_table0 <- table(twoyears_in$BNF_Chapter)
+
+library("ggplot2") 
+
+par(mfrow = c(1, 2))
+
+ggplot(practice_table, aes(x = BNF_Chapter, y = Total_Items_PC, fill = BNF_Chapter) ) + 
+  geom_bar(stat = "identity" ) + scale_fill_viridis_d() +
+  ggtitle("Items dispensed") + 
+  labs(title="Total items dispensed per Chapter",
+       x ="BNF Chapter", y = "# Items")   + theme(legend.position="none")
+
+
+
+barplot(plot_table0, 
+        main = "Basic item frequencies by BNF Chapter", 
+        sub = "Includes non-relevant Chapter data",
+        xlab = "Chapter", 
+        ylab = "Frequency",
+        col = viridis(5),
+        cex.names = 0.75,
+        beside=TRUE,
+        args.legend=list(bty="n",horiz=TRUE),
+)
+
 
 
